@@ -4,7 +4,9 @@ import {
 } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/storage';
 import { getLanguage } from '../shared/i18n';
-import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
+import {
+  applyBlockList, CARD_SELECTOR, END_SCREEN_CARD_SELECTOR, isInsideAdContainer,
+} from './blocker';
 import { scoutScan } from './card-scout';
 import { setupMenuInjector } from './menu-injector';
 
@@ -74,32 +76,43 @@ async function refresh(): Promise<void> {
   });
 
   // YouTubeはSPAでカード一覧を頻繁に部分差し替えするため、DOM変化を監視して
-  // 追加されたノードに動画カードが含まれる場合だけ再適用する(無関係なDOM変化での
-  // 無駄な再描画を避ける)。
+  // 既知カードの追加・内容変更時だけ再適用する(無関係なDOM変化での無駄な再描画を避ける)。
   const domObserver = new MutationObserver((mutations) => {
-    const addedElements = mutations.flatMap(m => [...m.addedNodes].filter(n => n.nodeType === 1));
-    if (addedElements.length === 0) return;
+    const addedElements = mutations.flatMap(m => [...m.addedNodes].filter(n => n.nodeType === 1)) as Element[];
 
     // 観測モードは未知カードが対象なので CARD_SELECTOR で絞らず要素追加全般で走らせる
-    scheduleScout();
+    if (addedElements.length > 0) scheduleScout();
 
     // 広告枠は uBlock 等と同じDOMを奪い合いやすく、そこだけの変化で毎回
-    // 再スキャンすると衝突頻度が上がる。広告枠以外にカードが増えた時だけ反応する
-    const hasRelevantChange = addedElements.some((n) => {
-      const el = n as Element;
-      const cards = [
-        ...(el.matches?.(CARD_SELECTOR) ? [el] : []),
-        ...(el.querySelectorAll?.(CARD_SELECTOR) ?? []),
-      ];
-      return cards.some((card) => !isInsideAdContainer(card));
+    // 再スキャンすると衝突頻度が上がる。広告枠以外にカードが増えた時だけ反応する。
+    // 終了画面はカード枠を先に作り、後から文字だけ差し替える場合があるため、
+    // 既知カード内のchildList/characterData変更も対象にする（定期走査はしない）。
+    const hasRelevantChange = mutations.some((mutation) => {
+      const target = mutation.target instanceof Element
+        ? mutation.target
+        : mutation.target.parentElement;
+      // 内容変更の追加監視は終了画面だけに限定し、通常カード内の頻繁な
+      // テキスト更新では全カード走査を起動しない。
+      const containingCard = target?.closest(END_SCREEN_CARD_SELECTOR);
+      if (containingCard && !isInsideAdContainer(containingCard)) return true;
+
+      return [...mutation.addedNodes].some((node) => {
+        if (!(node instanceof Element)) return false;
+        const el = node;
+        const cards = [
+          ...(el.matches?.(CARD_SELECTOR) ? [el] : []),
+          ...(el.querySelectorAll?.(CARD_SELECTOR) ?? []),
+        ];
+        return cards.some((card) => !isInsideAdContainer(card));
+      });
     });
     if (!hasRelevantChange) return;
 
     applyAndLog();
   });
   // body配下全体を対象に監視開始。YouTubeはページ内のどこでカード一覧を差し替えるか
-  // 特定できないため、childList+subtreeでDOM全域を対象にする。
-  domObserver.observe(document.body, { childList: true, subtree: true });
+  // 特定できないため、childList+characterData+subtreeでDOM全域を対象にする。
+  domObserver.observe(document.body, { childList: true, characterData: true, subtree: true });
 
   // 1.4.0コメントアウト: domObserver側だけでSPA遷移時のカード差し替えを
   // 検知できるか実地テスト中。(YTBLOCKER_TEST_NAVIGATE_FINISH)

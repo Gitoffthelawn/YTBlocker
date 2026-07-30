@@ -114,3 +114,4 @@ content scriptのエントリポイント。監視・再適用ロジックを統
 
 - YouTubeのCSSクラス命名には wiz形式（`yt-content-metadata-view-model-wiz__metadata-text`）と camelCase形式（`ytContentMetadataViewModelMetadataText`）の2系統が存在し、版によってどちらが使われるかが異なる。セレクタは両対応で列挙する（`blocker.ts`のセレクタ定義全般に影響）
 - 広告枠（`ytd-ad-slot-renderer` 等）内のカードは削除しない。YouTube側の広告完了判定を壊し無限リロードを引き起こすことが実機検証で確認されている（`blocker.ts`の`isInsideAdContainer`、`content.ts`のMutationObserverコールバック双方で考慮）
+- プレイヤー内の終了画面動画（旧UIの`.ytp-videowall-still`、新UIの`.ytp-modern-videowall-still`、再生終盤の`.ytp-ce-video`）も通常カードと同じMutationObserverで検知する。カード追加に加え、既存の終了画面カード内で後からタイトル文字だけが差し替わる場合も`characterData`変更で再適用する。再生位置・動画終了状態のポーリングは行わない。終了画面によってチャンネル名を持たない場合は動画タイトルのルールだけを適用する

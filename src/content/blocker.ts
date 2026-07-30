@@ -3,6 +3,12 @@ import { showToast } from './toast';
 
 import type { BlockEntry, BlockLog } from '../shared/types';
 
+export const END_SCREEN_CARD_SELECTOR = [
+  'a.ytp-videowall-still', // 再生終了後にプレイヤー内へ並ぶおすすめ動画
+  '.ytp-modern-videowall-still', // 再生終了後の新UIおすすめ動画
+  '.ytp-ce-video',         // 再生終盤にプレイヤーへ重なる終了画面動画
+].join(', ');
+
 export const CARD_SELECTOR = [
   'ytd-rich-item-renderer',
   'ytd-video-renderer',
@@ -12,6 +18,7 @@ export const CARD_SELECTOR = [
   'ytd-shorts-lockup-view-model',     // 旧バージョン
   'ytm-shorts-lockup-view-model-v2',  // 検索結果ページ用
   'yt-lockup-view-model',             // 新UI汎用カード(watchページ関連動画など)
+  END_SCREEN_CARD_SELECTOR,
 ].join(', ');
 
 /**
@@ -89,6 +96,9 @@ function deepQuery(root: Element | ShadowRoot, selector: string): Element | null
  */
 export function getVideoTitle(card: Element): string {
   const candidates = [
+    '.ytp-modern-videowall-still-info-title', // 再生終了後の新UIおすすめ
+    '.ytp-videowall-still-info-title', // 再生終了後のプレイヤー内おすすめ
+    '.ytp-ce-video-title',             // 再生終盤の終了画面動画
     'h3 a#video-title',            // 旧構造
     'a#video-title',
     '#video-title',
@@ -125,6 +135,14 @@ function getMetadataChannelText(card: Element): string {
 
 /** 動画カード要素からチャンネル名を取得する。getVideoTitle と同様に複数構造をフォールバックで試す。 */
 export function getChannelName(card: Element): string {
+  // 終了後のビデオウォールは「チャンネル名 • 再生数」を1要素にまとめている。
+  // チャンネルルールには区切りより前の名前だけを使う。
+  const videowallAuthor = deepQuery(card, [
+    '.ytp-modern-videowall-still-info-author',
+    '.ytp-videowall-still-info-author',
+  ].join(', '))?.textContent?.trim();
+  if (videowallAuthor) return videowallAuthor.split(' • ')[0].trim();
+
   const candidates = [
     'ytd-channel-name a',
     '#channel-name a',
