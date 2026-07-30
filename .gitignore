@@ -5,3 +5,4 @@ dist/
 web-ext-artifacts/
 .amo-upload-uuid
 .web-ext-staging/
+AGENTS.md
