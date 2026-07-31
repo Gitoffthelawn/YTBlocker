@@ -16,6 +16,7 @@ import {
 import type { BlockEntry, MatchTarget, MatchType } from '../shared/types';
 
 const versionLabel        = document.getElementById('version-label')         as HTMLSpanElement;
+const changelogLink       = document.getElementById('changelog-link')        as HTMLAnchorElement;
 const langSelect          = document.getElementById('lang-select')           as HTMLSelectElement;
 const usageBadge          = document.getElementById('usage-badge')           as HTMLSpanElement;
 const shortsCheckbox      = document.getElementById('shorts-checkbox')       as HTMLInputElement;
@@ -132,6 +133,7 @@ for (const { code, label } of LANGS) {
 async function applyLanguage(lang: Lang): Promise<void> {
   currentLang = lang;
   langSelect.value = lang;
+  changelogLink.href = `https://github.com/Omanjusan/YTBlocker/blob/main/CHANGELOG${lang === 'ja' ? '.ja' : ''}.md`;
   applyStaticI18n(lang);
   updateMatchIndicator();
   updateByteBudget();

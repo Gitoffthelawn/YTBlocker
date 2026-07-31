@@ -36,6 +36,12 @@
       font-weight: normal;
       color: #888;
     }
+    header .header-links {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
     header .repo-link {
       font-size: 11px;
       font-weight: normal;
@@ -377,7 +383,11 @@
       <span class="version" id="version-label"></span>
       <span data-i18n="header.settings">設定</span>
     </span>
-    <a class="repo-link" href="https://github.com/Omanjusan/YTBlocker" target="_blank" rel="noopener">github.com/Omanjusan/YTBlocker</a>
+    <span class="header-links">
+      <a class="repo-link" href="https://github.com/Omanjusan/YTBlocker" target="_blank" rel="noopener">github.com/Omanjusan/YTBlocker</a>
+      <a class="repo-link" id="changelog-link" href="https://github.com/Omanjusan/YTBlocker/blob/main/CHANGELOG.ja.md" target="_blank" rel="noopener">Changelog</a>
+      <a class="repo-link" href="https://addons.mozilla.org/firefox/addon/youtublocker/" target="_blank" rel="noopener">View on Firefox Add-ons</a>
+    </span>
   </header>
 
   <main>
