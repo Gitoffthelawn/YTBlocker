@@ -284,6 +284,31 @@
 
     /* 登録済みリスト */
     #entry-list { display: flex; flex-direction: column; gap: 8px; }
+    #entry-pager {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    #entry-pager.is-visible { display: flex; }
+    .pager-button {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 9px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      color: #065fd4;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .pager-button:hover:not(:disabled) { background: #e3efff; border-color: #065fd4; }
+    .pager-button.is-current { background: #065fd4; border-color: #065fd4; color: #fff; }
+    .pager-button:disabled { color: #aaa; cursor: default; }
+    .pager-ellipsis { color: #888; padding: 0 2px; }
+    .pager-summary { width: 100%; text-align: center; font-size: 11px; color: #888; }
     .entry-item {
       display: flex;
       align-items: center;
@@ -548,6 +573,7 @@
       <div id="entry-list">
         <p class="empty-msg" data-i18n="rules.empty">ルールがありません</p>
       </div>
+      <nav id="entry-pager" aria-label="ルール一覧のページ切り替え"></nav>
     </section>
 
     <!-- ブロックログ -->

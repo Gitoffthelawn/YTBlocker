@@ -36,6 +36,7 @@ const budgetText          = document.getElementById('budget-text')           as 
 const btnSubmit           = document.getElementById('btn-submit')            as HTMLButtonElement;
 const btnCancel           = document.getElementById('btn-cancel')            as HTMLButtonElement;
 const entryList           = document.getElementById('entry-list')            as HTMLDivElement;
+const entryPager          = document.getElementById('entry-pager')           as HTMLElement;
 const logList             = document.getElementById('log-list')              as HTMLDivElement;
 const btnClearLog         = document.getElementById('btn-clear-log')         as HTMLButtonElement;
 
@@ -116,6 +117,9 @@ let lastActiveTab: FormTab = getActiveTab();
 
 /** 編集中のブロックルールID。null なら新規登録モード。 */
 let editingId: string | null = null;
+/** ルール一覧の現在ページ。保存データには含めず、この画面を開いている間だけ保持する。 */
+let entryPage = 1;
+const ENTRIES_PER_PAGE = 10;
 
 /** 現在の表示言語。言語切替時に静的文言と動的描画部分の両方を再適用する。 */
 let currentLang: Lang = 'ja';
@@ -374,6 +378,8 @@ async function handleSubmit(): Promise<void> {
       createdAt: Date.now(),
     };
     await addEntry(entry);
+    // 新規ルールは新しい順の先頭に入るため、登録結果が見える1ページ目へ戻す
+    entryPage = 1;
     // 値はタブ間で共有しているため、登録後は両方の入力欄をクリアする
     generalInput.value = '';
     regexInput.value = '';
@@ -403,10 +409,42 @@ function targetBadgeClass(entry: BlockEntry): string {
   return 'badge-both';
 }
 
-/** 登録済みブロックルール一覧を新しい順に描画する。 */
+/** ページャーのボタンを生成する。 */
+function createPagerButton(label: string, page: number, disabled = false, current = false): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'pager-button' + (current ? ' is-current' : '');
+  button.textContent = label;
+  button.disabled = disabled;
+  if (current) button.setAttribute('aria-current', 'page');
+  button.addEventListener('click', () => {
+    entryPage = page;
+    void renderList();
+  });
+  return button;
+}
+
+/** ページ数が多い場合は、先頭・末尾・現在ページ周辺だけを表示する。 */
+function pagerPages(totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const pages = new Set([1, totalPages, entryPage - 1, entryPage, entryPage + 1]);
+  const valid = [...pages].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  const result: (number | 'ellipsis')[] = [];
+  for (const page of valid) {
+    const previous = result[result.length - 1];
+    if (typeof previous === 'number' && page - previous > 1) result.push('ellipsis');
+    result.push(page);
+  }
+  return result;
+}
+
+/** 登録済みブロックルール一覧を新しい順に、10件単位で描画する。 */
 async function renderList(): Promise<void> {
   const entries = await getEntries();
   entryList.innerHTML = '';
+  entryPager.innerHTML = '';
+  entryPager.classList.remove('is-visible');
+  entryPager.setAttribute('aria-label', t('pager.label', currentLang));
 
   if (entries.length === 0) {
     const emptyMsg = document.createElement('p');
@@ -417,8 +455,11 @@ async function renderList(): Promise<void> {
   }
 
   const sorted = [...entries].sort((a, b) => b.createdAt - a.createdAt);
+  const totalPages = Math.ceil(sorted.length / ENTRIES_PER_PAGE);
+  entryPage = Math.min(Math.max(entryPage, 1), totalPages);
+  const pageEntries = sorted.slice((entryPage - 1) * ENTRIES_PER_PAGE, entryPage * ENTRIES_PER_PAGE);
 
-  for (const entry of sorted) {
+  for (const entry of pageEntries) {
     const item = document.createElement('div');
     item.className = 'entry-item' + (entry.id === editingId ? ' is-target' : '');
 
@@ -450,6 +491,33 @@ async function renderList(): Promise<void> {
 
     item.append(targetBadge, typeBadge, valueEl, editBtn, deleteBtn);
     entryList.appendChild(item);
+  }
+
+  if (totalPages > 1) {
+    entryPager.classList.add('is-visible');
+    entryPager.appendChild(createPagerButton(t('pager.previous', currentLang), entryPage - 1, entryPage === 1));
+    for (const page of pagerPages(totalPages)) {
+      if (page === 'ellipsis') {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'pager-ellipsis';
+        ellipsis.textContent = '…';
+        entryPager.appendChild(ellipsis);
+      } else {
+        entryPager.appendChild(createPagerButton(String(page), page, false, page === entryPage));
+      }
+    }
+    entryPager.appendChild(createPagerButton(t('pager.next', currentLang), entryPage + 1, entryPage === totalPages));
+
+    const summary = document.createElement('span');
+    summary.className = 'pager-summary';
+    summary.textContent = t('pager.summary', currentLang, {
+      count: sorted.length,
+      start: (entryPage - 1) * ENTRIES_PER_PAGE + 1,
+      end: Math.min(entryPage * ENTRIES_PER_PAGE, sorted.length),
+      current: entryPage,
+      total: totalPages,
+    });
+    entryPager.appendChild(summary);
   }
 }
 
