@@ -2,8 +2,12 @@
   "manifest_version": 2,
   "default_locale": "ja",
   "name": "__MSG_extName__",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "__MSG_extDescription__",
+
+  "icons": {
+    "128": "YTBicon.png"
+  },
 
   "permissions": [
     "storage",
@@ -19,7 +23,8 @@
   ],
 
   "browser_action": {
-    "default_title": "__MSG_extName__"
+    "default_title": "__MSG_extName__",
+    "default_icon": "YTBicon.png"
   },
 
   "background": {

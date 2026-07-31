@@ -13,6 +13,7 @@ const STAGING_DIR = path.join(ROOT, '.web-ext-staging');
 
 const DIST_ZIP_INCLUDES = [
   'manifest.json',
+  'YTBicon.png',
   'options.html',
   'dist',
   '_locales',
