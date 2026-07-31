@@ -226,10 +226,15 @@ const messages: Record<string, Dict> = {
   'btn.cancelEdit':   { ja: '編集をキャンセル', en: 'Cancel editing', de: 'Bearbeitung abbrechen', it: 'Annulla modifica', fr: 'Annuler la modification', ko: '편집 취소', 'zh-CN': '取消编辑', 'zh-TW': '取消編輯' },
   'rules.title':      { ja: '登録済みルール', en: 'Saved rules', de: 'Gespeicherte Regeln', it: 'Regole salvate', fr: 'Règles enregistrées', ko: '등록된 규칙', 'zh-CN': '已保存的规则', 'zh-TW': '已儲存的規則' },
   'rules.empty':      { ja: 'ルールがありません', en: 'No rules yet', de: 'Keine Regeln vorhanden', it: 'Nessuna regola presente', fr: 'Aucune règle enregistrée', ko: '등록된 규칙이 없습니다', 'zh-CN': '暂无规则', 'zh-TW': '尚無規則' },
+  'search.placeholder': { ja: 'NGワードを検索', en: 'Search block rules', de: 'Sperrregeln suchen', it: 'Cerca regole di blocco', fr: 'Rechercher des règles', ko: '차단 규칙 검색', 'zh-CN': '搜索屏蔽规则', 'zh-TW': '搜尋封鎖規則' },
+  'search.submit':    { ja: '検索', en: 'Search', de: 'Suchen', it: 'Cerca', fr: 'Rechercher', ko: '검색', 'zh-CN': '搜索', 'zh-TW': '搜尋' },
+  'search.clear':     { ja: '検索をクリア', en: 'Clear search', de: 'Suche löschen', it: 'Cancella ricerca', fr: 'Effacer la recherche', ko: '검색 지우기', 'zh-CN': '清除搜索', 'zh-TW': '清除搜尋' },
+  'search.empty':     { ja: '「{query}」に一致するルールはありません', en: 'No rules match “{query}”', de: 'Keine Regeln stimmen mit „{query}“ überein', it: 'Nessuna regola corrisponde a “{query}”', fr: 'Aucune règle ne correspond à « {query} »', ko: '“{query}”와 일치하는 규칙이 없습니다', 'zh-CN': '没有与“{query}”匹配的规则', 'zh-TW': '沒有與「{query}」相符的規則' },
   'pager.label':      { ja: 'ルール一覧のページ切り替え', en: 'Rule list pages', de: 'Seiten der Regelliste', it: 'Pagine dell’elenco regole', fr: 'Pages de la liste des règles', ko: '규칙 목록 페이지', 'zh-CN': '规则列表分页', 'zh-TW': '規則列表分頁' },
   'pager.previous':   { ja: '前へ', en: 'Previous', de: 'Zurück', it: 'Precedente', fr: 'Précédent', ko: '이전', 'zh-CN': '上一页', 'zh-TW': '上一頁' },
   'pager.next':       { ja: '次へ', en: 'Next', de: 'Weiter', it: 'Successiva', fr: 'Suivant', ko: '다음', 'zh-CN': '下一页', 'zh-TW': '下一頁' },
   'pager.summary':    { ja: '全{count}件・{start}〜{end}件目 {current}/{total}ページ', en: '{count} rules · Showing {start}–{end} · Page {current} of {total}', de: '{count} Regeln · {start}–{end} angezeigt · Seite {current} von {total}', it: '{count} regole · Visualizzate {start}–{end} · Pagina {current} di {total}', fr: '{count} règles · Affichage {start}–{end} · Page {current} sur {total}', ko: '총 {count}개 · {start}~{end}번째 · {current}/{total}페이지', 'zh-CN': '共 {count} 条 · 第 {start}～{end} 条 · 第 {current}/{total} 页', 'zh-TW': '共 {count} 筆 · 第 {start}～{end} 筆 · 第 {current}/{total} 頁' },
+  'pager.searchSummary': { ja: '全{count}件・検索結果{filtered}件・{start}〜{end}件目 {current}/{total}ページ', en: '{count} rules · {filtered} results · Showing {start}–{end} · Page {current} of {total}', de: '{count} Regeln · {filtered} Ergebnisse · {start}–{end} angezeigt · Seite {current} von {total}', it: '{count} regole · {filtered} risultati · Visualizzate {start}–{end} · Pagina {current} di {total}', fr: '{count} règles · {filtered} résultats · Affichage {start}–{end} · Page {current} sur {total}', ko: '총 {count}개 · 검색 결과 {filtered}개 · {start}~{end}번째 · {current}/{total}페이지', 'zh-CN': '共 {count} 条 · 搜索结果 {filtered} 条 · 第 {start}～{end} 条 · 第 {current}/{total} 页', 'zh-TW': '共 {count} 筆 · 搜尋結果 {filtered} 筆 · 第 {start}～{end} 筆 · 第 {current}/{total} 頁' },
   'matchType.regex':  { ja: '正規表現', en: 'Regex', de: 'Regex', it: 'Regex', fr: 'Regex', ko: '정규식', 'zh-CN': '正则表达式', 'zh-TW': '正規表示式' },
   'matchType.exact':  { ja: '完全一致', en: 'Exact match', de: 'Exakte Übereinstimmung', it: 'Corrispondenza esatta', fr: 'Correspondance exacte', ko: '완전 일치', 'zh-CN': '完全匹配', 'zh-TW': '完全符合' },
   'matchType.partial': { ja: '部分一致', en: 'Partial match', de: 'Teilweise Übereinstimmung', it: 'Corrispondenza parziale', fr: 'Correspondance partielle', ko: '부분 일치', 'zh-CN': '部分匹配', 'zh-TW': '部分符合' },
@@ -296,6 +301,9 @@ export function applyStaticI18n(lang: Lang, root: ParentNode = document): void {
   });
   root.querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]').forEach((el) => {
     el.placeholder = t(el.dataset.i18nPlaceholder!, lang);
+  });
+  root.querySelectorAll<HTMLElement>('[data-i18n-aria-label]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel!, lang));
   });
 }
 

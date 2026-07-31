@@ -35,6 +35,9 @@ const matchIndicator      = document.getElementById('match-indicator')       as 
 const budgetText          = document.getElementById('budget-text')           as HTMLSpanElement;
 const btnSubmit           = document.getElementById('btn-submit')            as HTMLButtonElement;
 const btnCancel           = document.getElementById('btn-cancel')            as HTMLButtonElement;
+const entrySearchForm     = document.getElementById('entry-search-form')     as HTMLFormElement;
+const entrySearchInput    = document.getElementById('entry-search-input')    as HTMLInputElement;
+const entrySearchClear    = document.getElementById('entry-search-clear')    as HTMLButtonElement;
 const entryList           = document.getElementById('entry-list')            as HTMLDivElement;
 const entryPager          = document.getElementById('entry-pager')           as HTMLElement;
 const logList             = document.getElementById('log-list')              as HTMLDivElement;
@@ -120,6 +123,8 @@ let editingId: string | null = null;
 /** ルール一覧の現在ページ。保存データには含めず、この画面を開いている間だけ保持する。 */
 let entryPage = 1;
 const ENTRIES_PER_PAGE = 10;
+/** 実行済みの検索条件。入力途中の文字列とは分け、検索実行時にだけ更新する。 */
+let entrySearchQuery = '';
 
 /** 現在の表示言語。言語切替時に静的文言と動的描画部分の両方を再適用する。 */
 let currentLang: Lang = 'ja';
@@ -378,8 +383,8 @@ async function handleSubmit(): Promise<void> {
       createdAt: Date.now(),
     };
     await addEntry(entry);
-    // 新規ルールは新しい順の先頭に入るため、登録結果が見える1ページ目へ戻す
-    entryPage = 1;
+    // 通常一覧では追加結果が見える先頭へ戻す。検索中は作業中のページ位置を維持する。
+    if (!entrySearchQuery) entryPage = 1;
     // 値はタブ間で共有しているため、登録後は両方の入力欄をクリアする
     generalInput.value = '';
     regexInput.value = '';
@@ -394,6 +399,42 @@ async function handleSubmit(): Promise<void> {
 btnSubmit.addEventListener('click', handleSubmit);
 
 // ---- ルールリスト描画 ----
+
+/** 入力内容または実行済み条件がある間、検索解除ボタンを表示する。 */
+function updateSearchClearVisibility(): void {
+  entrySearchClear.classList.toggle('is-visible', Boolean(entrySearchInput.value || entrySearchQuery));
+}
+
+/** 検索条件を解除して全件一覧の先頭へ戻す。 */
+function clearEntrySearch(): void {
+  entrySearchInput.value = '';
+  entrySearchQuery = '';
+  entryPage = 1;
+  updateSearchClearVisibility();
+  void renderList();
+}
+
+entrySearchForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const query = entrySearchInput.value.trim();
+  if (!query) {
+    clearEntrySearch();
+    return;
+  }
+  entrySearchInput.value = query;
+  entrySearchQuery = query;
+  entryPage = 1;
+  updateSearchClearVisibility();
+  void renderList();
+});
+
+entrySearchInput.addEventListener('input', updateSearchClearVisibility);
+entrySearchInput.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  clearEntrySearch();
+});
+entrySearchClear.addEventListener('click', clearEntrySearch);
 
 /** ルールの適用対象(video/channel/both)を表示言語のラベル文字列に変換する。 */
 function targetLabel(entry: BlockEntry): string {
@@ -446,7 +487,7 @@ async function renderList(): Promise<void> {
   entryPager.classList.remove('is-visible');
   entryPager.setAttribute('aria-label', t('pager.label', currentLang));
 
-  if (entries.length === 0) {
+  if (entries.length === 0 && !entrySearchQuery) {
     const emptyMsg = document.createElement('p');
     emptyMsg.className = 'empty-msg';
     emptyMsg.textContent = t('rules.empty', currentLang);
@@ -455,9 +496,30 @@ async function renderList(): Promise<void> {
   }
 
   const sorted = [...entries].sort((a, b) => b.createdAt - a.createdAt);
-  const totalPages = Math.ceil(sorted.length / ENTRIES_PER_PAGE);
+  // 正規表現ルールも評価せず、保存文字列そのものを大文字小文字を区別しない部分一致で探す。
+  const normalizedQuery = entrySearchQuery.toLocaleLowerCase();
+  const filtered = normalizedQuery
+    ? sorted.filter((entry) => entry.value.toLocaleLowerCase().includes(normalizedQuery))
+    : sorted;
+
+  if (filtered.length === 0) {
+    const emptyMsg = document.createElement('p');
+    emptyMsg.className = 'empty-msg';
+    emptyMsg.textContent = t('search.empty', currentLang, { query: entrySearchQuery });
+    entryList.appendChild(emptyMsg);
+
+    const clearButton = document.createElement('button');
+    clearButton.type = 'button';
+    clearButton.className = 'search-empty-action';
+    clearButton.textContent = t('search.clear', currentLang);
+    clearButton.addEventListener('click', clearEntrySearch);
+    entryList.appendChild(clearButton);
+    return;
+  }
+
+  const totalPages = Math.ceil(filtered.length / ENTRIES_PER_PAGE);
   entryPage = Math.min(Math.max(entryPage, 1), totalPages);
-  const pageEntries = sorted.slice((entryPage - 1) * ENTRIES_PER_PAGE, entryPage * ENTRIES_PER_PAGE);
+  const pageEntries = filtered.slice((entryPage - 1) * ENTRIES_PER_PAGE, entryPage * ENTRIES_PER_PAGE);
 
   for (const entry of pageEntries) {
     const item = document.createElement('div');
@@ -493,8 +555,8 @@ async function renderList(): Promise<void> {
     entryList.appendChild(item);
   }
 
+  entryPager.classList.add('is-visible');
   if (totalPages > 1) {
-    entryPager.classList.add('is-visible');
     entryPager.appendChild(createPagerButton(t('pager.previous', currentLang), entryPage - 1, entryPage === 1));
     for (const page of pagerPages(totalPages)) {
       if (page === 'ellipsis') {
@@ -508,17 +570,19 @@ async function renderList(): Promise<void> {
     }
     entryPager.appendChild(createPagerButton(t('pager.next', currentLang), entryPage + 1, entryPage === totalPages));
 
-    const summary = document.createElement('span');
-    summary.className = 'pager-summary';
-    summary.textContent = t('pager.summary', currentLang, {
-      count: sorted.length,
-      start: (entryPage - 1) * ENTRIES_PER_PAGE + 1,
-      end: Math.min(entryPage * ENTRIES_PER_PAGE, sorted.length),
-      current: entryPage,
-      total: totalPages,
-    });
-    entryPager.appendChild(summary);
   }
+
+  const summary = document.createElement('span');
+  summary.className = 'pager-summary';
+  summary.textContent = t(entrySearchQuery ? 'pager.searchSummary' : 'pager.summary', currentLang, {
+    count: sorted.length,
+    filtered: filtered.length,
+    start: (entryPage - 1) * ENTRIES_PER_PAGE + 1,
+    end: Math.min(entryPage * ENTRIES_PER_PAGE, filtered.length),
+    current: entryPage,
+    total: totalPages,
+  });
+  entryPager.appendChild(summary);
 }
 
 // ---- ブロックログ描画 ----
