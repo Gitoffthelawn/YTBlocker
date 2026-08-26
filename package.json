@@ -13,6 +13,6 @@
     "@types/firefox-webext-browser": "^120.0.0",
     "esbuild": "^0.28.1",
     "typescript": "^5.4.0",
-    "web-ext": "^10.5.0"
+    "web-ext": "^10.6.0"
   }
 }
