@@ -5,6 +5,7 @@
   "scripts": {
     "build": "node build.js",
     "watch": "node build.js --watch",
+    "test:watch-menu": "node tests/run-watch-menu-tests.js",
     "experiment": "web-ext run --source-dir=. --firefox-binary=flatpak:org.mozilla.firefox --firefox-profile=develop --keep-profile-changes",
     "package": "node webext-package.js",
     "release": "node release.js"
