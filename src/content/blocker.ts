@@ -2,6 +2,7 @@ import { addEntry, addLogs, generateId } from '../shared/storage';
 import { showToast } from './toast';
 
 import type { BlockEntry, BlockLog } from '../shared/types';
+import type { Lang } from '../shared/i18n';
 
 export const END_SCREEN_CARD_SELECTOR = [
   'a.ytp-videowall-still', // 再生終了後にプレイヤー内へ並ぶおすすめ動画
@@ -183,14 +184,15 @@ export async function blockAndLog(
   value: string,
   title: string,
   channel: string,
-  onAdded: () => void
+  onAdded: () => void,
+  lang: Lang
 ): Promise<void> {
   const id = generateId();
   await addEntry({ id, target, matchType: 'exact', value, createdAt: Date.now() });
   await addLogs([{ videoTitle: title, channelName: channel, matchedValue: value, blockedAt: Date.now() }]);
   hideCard(card);
   onAdded();
-  showToast(value, id);
+  showToast(value, id, lang);
 }
 
 /** カード要素がショート動画かどうかを判定する。 */

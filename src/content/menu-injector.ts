@@ -129,7 +129,7 @@ function injectItems(card: Element, listbox: Element, lang: Lang, onAdded: OnAdd
   if (title) {
     listbox.appendChild(
       createMenuItem(t('menu.blockVideo', lang), async () => {
-        await blockAndLog(card, 'video', title, title, channel, onAdded);
+        await blockAndLog(card, 'video', title, title, channel, onAdded, lang);
       })
     );
   }
@@ -137,7 +137,7 @@ function injectItems(card: Element, listbox: Element, lang: Lang, onAdded: OnAdd
   if (channel) {
     listbox.appendChild(
       createMenuItem(t('menu.blockChannel', lang), async () => {
-        await blockAndLog(card, 'channel', channel, title, channel, onAdded);
+        await blockAndLog(card, 'channel', channel, title, channel, onAdded, lang);
       })
     );
   }
@@ -170,6 +170,7 @@ function injectPlayingVideoItems(
           title: metadata.title,
           channel: metadata.channel,
           onAdded,
+          lang,
         });
       })
     );
@@ -184,6 +185,7 @@ function injectPlayingVideoItems(
           title: metadata.title,
           channel: metadata.channel,
           onAdded,
+          lang,
         });
       })
     );

@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createPlayingVideoBlockSaver,
-  PLAYING_VIDEO_NOTICE,
 } from '../src/content/playing-video-block';
 
 test('playing-video save stores and logs without accepting a card or hide dependency', async () => {
@@ -11,8 +10,8 @@ test('playing-video save stores and logs without accepting a card or hide depend
     generateId: () => 'entry-1',
     addEntry: async (entry) => { calls.push(['entry', entry]); },
     addLogs: async (logs) => { calls.push(['logs', logs]); },
-    showToast: (label, entryId, secondLine) => {
-      calls.push(['toast', label, entryId, secondLine]);
+    showToast: (label, entryId, lang, secondLine) => {
+      calls.push(['toast', label, entryId, lang, secondLine]);
     },
   });
   let refreshCount = 0;
@@ -24,6 +23,7 @@ test('playing-video save stores and logs without accepting a card or hide depend
     channel: 'Current channel',
     createdAt: 1234,
     onAdded: () => { refreshCount++; },
+    lang: 'ja',
   });
 
   assert.deepEqual(calls, [
@@ -40,8 +40,7 @@ test('playing-video save stores and logs without accepting a card or hide depend
       matchedValue: 'Current video title',
       blockedAt: 1234,
     }]],
-    ['toast', 'Current video title', 'entry-1', PLAYING_VIDEO_NOTICE],
+    ['toast', 'Current video title', 'entry-1', 'ja', 'このブロックでは再生中の動画を停止しません'],
   ]);
   assert.equal(refreshCount, 1);
-  assert.equal(PLAYING_VIDEO_NOTICE, 'このブロックでは再生中の動画を停止しません');
 });

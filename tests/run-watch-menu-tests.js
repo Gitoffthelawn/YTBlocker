@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const testFiles = [
   'tests/watch-menu-context.test.ts',
   'tests/playing-video-block.test.ts',
+  'tests/toast-i18n.test.ts',
 ];
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ytblocker-watch-menu-tests-'));
 let failed = false;

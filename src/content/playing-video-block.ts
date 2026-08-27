@@ -1,6 +1,5 @@
 import type { BlockEntry, BlockLog } from '../shared/types';
-
-export const PLAYING_VIDEO_NOTICE = 'このブロックでは再生中の動画を停止しません';
+import { t, type Lang } from '../shared/i18n';
 
 type PlayingVideoBlockInput = {
   target: 'video' | 'channel';
@@ -9,13 +8,14 @@ type PlayingVideoBlockInput = {
   channel: string;
   createdAt?: number;
   onAdded: () => void;
+  lang: Lang;
 };
 
 type PlayingVideoBlockDependencies = {
   generateId: () => string;
   addEntry: (entry: BlockEntry) => Promise<void>;
   addLogs: (logs: BlockLog[]) => Promise<void>;
-  showToast: (label: string, entryId: string, secondLine?: string) => void;
+  showToast: (label: string, entryId: string, lang: Lang, secondLine?: string) => void;
 };
 
 /**
@@ -39,6 +39,6 @@ export function createPlayingVideoBlockSaver(deps: PlayingVideoBlockDependencies
       blockedAt: createdAt,
     }]);
     input.onAdded();
-    deps.showToast(input.value, id, PLAYING_VIDEO_NOTICE);
+    deps.showToast(input.value, id, input.lang, t('toast.playingVideoContinues', input.lang));
   };
 }

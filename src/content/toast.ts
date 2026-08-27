@@ -1,4 +1,5 @@
 import { removeEntry } from '../shared/storage';
+import { t, type Lang } from '../shared/i18n';
 
 const DURATION_MS = 5000;
 
@@ -11,7 +12,7 @@ function truncate(text: string, max = 10): string {
  * ブロック登録直後に画面右下へ通知トーストを表示する。
  * 「元に戻す」ボタンで直前の登録を取り消せる。DURATION_MS 経過で自動的に消える。
  */
-export function showToast(label: string, entryId: string, secondLine?: string): void {
+export function showToast(label: string, entryId: string, lang: Lang, secondLine?: string): void {
   const toast = document.createElement('div');
   toast.style.cssText = [
     'position:fixed',
@@ -34,11 +35,11 @@ export function showToast(label: string, entryId: string, secondLine?: string): 
   ].join(';');
 
   const msg = document.createElement('span');
-  msg.textContent = `🚫 「${truncate(label)}」をNG登録しました`;
+  msg.textContent = t('toast.registered', lang, { label: truncate(label) });
   msg.style.cssText = 'flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
 
   const revertBtn = document.createElement('button');
-  revertBtn.textContent = '元に戻す';
+  revertBtn.textContent = t('toast.undo', lang);
   revertBtn.style.cssText = [
     'background:#555',
     'color:#fff',

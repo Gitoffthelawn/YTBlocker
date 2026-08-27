@@ -2,6 +2,12 @@
 
 [日本語版はこちら](CHANGELOG.ja.md)
 
+## v1.8.1 2026-08-27
+
+### Fixed
+
+- Added the multilingual resources that were inadvertently omitted from v1.8.0
+
 ## v1.8.0 2026-08-27
 
 ### Added

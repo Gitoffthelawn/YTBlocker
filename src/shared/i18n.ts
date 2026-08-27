@@ -260,6 +260,20 @@ const messages: Record<string, Dict> = {
   'log.pattern':      { ja: 'パターン: ', en: 'Pattern: ', de: 'Muster: ', it: 'Pattern: ', fr: 'Motif : ', ko: '패턴: ', 'zh-CN': '规则: ', 'zh-TW': '規則: ' },
   'menu.blockVideo':   { ja: '🚫 この動画をブロック', en: '🚫 Block this video', de: '🚫 Dieses Video blockieren', it: '🚫 Blocca questo video', fr: '🚫 Bloquer cette vidéo', ko: '🚫 이 동영상 차단', 'zh-CN': '🚫 屏蔽此视频', 'zh-TW': '🚫 封鎖此影片' },
   'menu.blockChannel': { ja: '🚫 このチャンネルをブロック', en: '🚫 Block this channel', de: '🚫 Diesen Kanal blockieren', it: '🚫 Blocca questo canale', fr: '🚫 Bloquer cette chaîne', ko: '🚫 이 채널 차단', 'zh-CN': '🚫 屏蔽此频道', 'zh-TW': '🚫 封鎖此頻道' },
+  'toast.registered': {
+    ja: '🚫 「{label}」をNG登録しました', en: '🚫 Added “{label}” to the block list', de: '🚫 „{label}“ wurde zur Sperrliste hinzugefügt',
+    it: '🚫 “{label}” è stato aggiunto all’elenco di blocco', fr: '🚫 « {label} » a été ajouté à la liste de blocage',
+    ko: '🚫 “{label}”을(를) 차단 목록에 추가했습니다', 'zh-CN': '🚫 已将“{label}”添加到屏蔽列表', 'zh-TW': '🚫 已將「{label}」加入封鎖清單',
+  },
+  'toast.undo': {
+    ja: '元に戻す', en: 'Undo', de: 'Rückgängig', it: 'Annulla', fr: 'Annuler', ko: '실행 취소', 'zh-CN': '撤销', 'zh-TW': '復原',
+  },
+  'toast.playingVideoContinues': {
+    ja: 'このブロックでは再生中の動画を停止しません', en: 'This block does not stop the currently playing video.',
+    de: 'Diese Blockierung stoppt das aktuell wiedergegebene Video nicht.', it: 'Questo blocco non interrompe il video attualmente in riproduzione.',
+    fr: 'Ce blocage n’arrête pas la vidéo en cours de lecture.', ko: '이 차단은 현재 재생 중인 동영상을 중지하지 않습니다.',
+    'zh-CN': '此屏蔽不会停止当前正在播放的视频。', 'zh-TW': '此封鎖不會停止目前正在播放的影片。',
+  },
 };
 
 /** {name}形式のプレースホルダを変数値で置換して翻訳文字列を取得する。 */
