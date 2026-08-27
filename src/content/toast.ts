@@ -11,7 +11,7 @@ function truncate(text: string, max = 10): string {
  * ブロック登録直後に画面右下へ通知トーストを表示する。
  * 「元に戻す」ボタンで直前の登録を取り消せる。DURATION_MS 経過で自動的に消える。
  */
-export function showToast(label: string, entryId: string): void {
+export function showToast(label: string, entryId: string, secondLine?: string): void {
   const toast = document.createElement('div');
   toast.style.cssText = [
     'position:fixed',
@@ -73,6 +73,18 @@ export function showToast(label: string, entryId: string): void {
 
   const timer = setTimeout(dismiss, DURATION_MS);
 
-  toast.append(msg, revertBtn);
+  if (secondLine) {
+    const lines = document.createElement('div');
+    lines.style.cssText = 'display:flex;flex:1;min-width:0;flex-direction:column;gap:2px';
+    const notice = document.createElement('span');
+    notice.textContent = secondLine;
+    notice.style.cssText = 'font-size:12px;white-space:nowrap';
+    lines.append(msg, notice);
+    toast.style.maxWidth = '420px';
+    toast.append(lines, revertBtn);
+  } else {
+    // 通常カード用トーストのDOM構造とスタイルは従来のまま維持する。
+    toast.append(msg, revertBtn);
+  }
   document.body.appendChild(toast);
 }

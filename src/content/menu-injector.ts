@@ -1,8 +1,23 @@
 import { blockAndLog, CARD_SELECTOR, getChannelName, getPageChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
 import { debugLog } from '../shared/debug';
 import { t, type Lang } from '../shared/i18n';
+import { addEntry, addLogs, generateId } from '../shared/storage';
+import { createPlayingVideoBlockSaver } from './playing-video-block';
+import { showToast } from './toast';
+import {
+  isPlayingVideoMenuClick,
+  resolvePlayingVideoMetadata,
+  type PlayingVideoMetadata,
+} from './watch-menu-context';
 
 type OnAdded = () => void;
+
+const savePlayingVideoBlock = createPlayingVideoBlockSaver({
+  generateId,
+  addEntry,
+  addLogs,
+  showToast,
+});
 
 /** メニュー監視のポーリング間隔。DOM使い回しによるdisplay切替はMutationObserverのchildList監視だけでは検出できないため併用する。 */
 const POLL_INTERVAL_MS = 200;
@@ -15,6 +30,8 @@ const SHEET_RESIZE_DELAY_MS = 150;
 
 /** 三点メニューを開いた対象のカード。監視中のみ非null。 */
 let pendingCard: Element | null = null;
+/** 再生ページの操作メニューを開いた場合の動画情報。通常カードの監視中はnull。 */
+let pendingPlayingVideo: PlayingVideoMetadata | null = null;
 /** WATCH_TIMEOUT_MS 経過で監視を打ち切るタイマー。 */
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 /** POLL_INTERVAL_MS 間隔でtryInjectを再実行するポーリングタイマー。 */
@@ -31,6 +48,7 @@ function reset(): void {
   menuObserver?.disconnect();
   menuObserver = null;
   pendingCard = null;
+  pendingPlayingVideo = null;
   cleanupTimer = null;
   pollTimer = null;
   injectAttempts = 0;
@@ -127,6 +145,74 @@ function injectItems(card: Element, listbox: Element, lang: Lang, onAdded: OnAdd
   updateSepVisibility(listbox);
 }
 
+/** 再生中動画の操作メニューへ、保存のみを行うブロック項目を追加する。 */
+function injectPlayingVideoItems(
+  metadata: PlayingVideoMetadata,
+  listbox: Element,
+  lang: Lang,
+  onAdded: OnAdded
+): void {
+  if (listbox.querySelector('.ytblocker-item')) return;
+
+  document.querySelectorAll('.ytblocker-item').forEach((el) => el.remove());
+
+  const sep = document.createElement('div');
+  sep.className = 'ytblocker-item ytblocker-sep';
+  sep.style.cssText = 'border-top:1px solid var(--yt-spec-10-percent-layer,#e0e0e0);margin:4px 0;pointer-events:none';
+  listbox.appendChild(sep);
+
+  if (metadata.title) {
+    listbox.appendChild(
+      createMenuItem(t('menu.blockVideo', lang), async () => {
+        await savePlayingVideoBlock({
+          target: 'video',
+          value: metadata.title,
+          title: metadata.title,
+          channel: metadata.channel,
+          onAdded,
+        });
+      })
+    );
+  }
+
+  if (metadata.channel) {
+    listbox.appendChild(
+      createMenuItem(t('menu.blockChannel', lang), async () => {
+        await savePlayingVideoBlock({
+          target: 'channel',
+          value: metadata.channel,
+          title: metadata.title,
+          channel: metadata.channel,
+          onAdded,
+        });
+      })
+    );
+  }
+
+  updateSepVisibility(listbox);
+}
+
+function readTexts(selectors: string[]): string[] {
+  return selectors.map((selector) => document.querySelector(selector)?.textContent ?? '');
+}
+
+/** 再生ページの表示中メタデータから登録対象を読み取る。 */
+function readPlayingVideoMetadata(): PlayingVideoMetadata | null {
+  return resolvePlayingVideoMetadata({
+    titleCandidates: readTexts([
+      'ytd-watch-metadata #title h1 yt-formatted-string',
+      'ytd-watch-metadata h1 yt-formatted-string',
+      'h1.ytd-watch-metadata yt-formatted-string',
+    ]),
+    channelCandidates: readTexts([
+      'ytd-watch-metadata #owner ytd-channel-name a',
+      'ytd-watch-metadata #upload-info ytd-channel-name a',
+      'ytd-video-owner-renderer ytd-channel-name a',
+    ]),
+    documentTitle: document.title,
+  });
+}
+
 /**
  * 区切り線の二重表示を防ぐ。旧UIのネイティブ最終項目はdividerを内蔵している(has-separator属性)ことがあり、
  * その直後にこちらのsepが並ぶと線が2本見える。sepの直前の可視要素がhas-separator持ちならsepを非表示にする。
@@ -204,7 +290,7 @@ function findMenuListbox(): Element | null {
 }
 
 /**
- * カード内の三点メニューボタンのクリックを document 全体で捕捉し、
+ * カード内の三点メニュー、または /watch の再生動画操作メニューのクリックを document 全体で捕捉し、
  * メニューが開いたタイミングで動的にブロック用の項目を注入する。
  * メニューは動的に生成されるため、クリック後に MutationObserver で
  * listbox の出現とネイティブ項目の構築完了を待ってから注入する
@@ -220,29 +306,51 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
     (e) => {
       const path = e.composedPath() as Element[];
 
-      // カード要素を探す
+      // カード要素を探す。見つからない場合だけ /watch の再生動画メニュー判定へ進む。
       const card = path.find(
         (el): el is Element => el instanceof Element && typeof el.matches === 'function' && el.matches(CARD_SELECTOR)
       );
-      if (!card) { debugLog('click: card not found in composedPath'); reset(); return; }
-      if (isInsideAdContainer(card)) { debugLog('click: card is inside ad container, skip'); reset(); return; }
 
       // BUTTON要素を探す（三点メニューボタン）
       const button = path.find(
         (el): el is Element => el instanceof Element && el.tagName === 'BUTTON'
       ) as HTMLButtonElement | undefined;
-      if (!button) { debugLog('click: card found but no BUTTON in composedPath, card:', card.tagName); reset(); return; }
+      if (!button) { reset(); return; }
 
-      debugLog('button in card clicked, card:', card.tagName, 'aria-label:', button.getAttribute('aria-label') ?? '');
+      let playingVideo: PlayingVideoMetadata | null = null;
+      if (card) {
+        if (isInsideAdContainer(card)) { debugLog('click: card is inside ad container, skip'); reset(); return; }
+      } else {
+        const insideWatchMenu = path.some((el) =>
+          el instanceof Element && typeof el.matches === 'function' && el.matches('ytd-menu-renderer')
+        );
+        const dropdownTrigger = button.getAttribute('aria-haspopup') === 'true'
+          || path.some((el) =>
+            el instanceof Element && typeof el.matches === 'function' && el.matches('.dropdown-trigger')
+          );
+        if (!isPlayingVideoMenuClick({
+          pathname: location.pathname,
+          insideWatchMenu,
+          dropdownTrigger,
+        })) {
+          reset();
+          return;
+        }
+        playingVideo = readPlayingVideoMetadata();
+        if (!playingVideo) { debugLog('click: playing video metadata not found'); reset(); return; }
+      }
+
+      debugLog('menu button clicked, target:', card?.tagName ?? 'playing-video', 'aria-label:', button.getAttribute('aria-label') ?? '');
 
       reset();
       // 新UIはメニューDOMをカード間で使い回すため、前回注入した項目が
       // 残っていると古いカードの情報のままになる。必ず除去してから再注入する
       document.querySelectorAll('.ytblocker-item').forEach((el) => el.remove());
-      pendingCard = card;
+      pendingCard = card ?? null;
+      pendingPlayingVideo = playingVideo;
 
       const tryInject = () => {
-        if (!pendingCard) return;
+        if (!pendingCard && !pendingPlayingVideo) return;
         const listbox = findMenuListbox();
         if (!listbox) return;
 
@@ -268,7 +376,11 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
         }
         injectAttempts++;
         debugLog('tryInject: injecting (attempt', injectAttempts, ')');
-        injectItems(pendingCard, listbox, lang, onAdded);
+        if (pendingCard) {
+          injectItems(pendingCard, listbox, lang, onAdded);
+        } else if (pendingPlayingVideo) {
+          injectPlayingVideoItems(pendingPlayingVideo, listbox, lang, onAdded);
+        }
         expandMenuSheet(listbox);
         // 即resetせず監視を継続し、YouTube側に消された場合は次のmutationで再注入する。
         // 監視はcleanupTimerで終了する。
@@ -280,7 +392,7 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
       menuObserver = new MutationObserver(tryInject);
       menuObserver.observe(document.body, { childList: true, subtree: true });
       pollTimer = setInterval(tryInject, POLL_INTERVAL_MS);
-      debugLog('menuObserver: observing for card', card.tagName);
+      debugLog('menuObserver: observing for target', card?.tagName ?? 'playing-video');
 
       cleanupTimer = setTimeout(() => {
         debugLog('cleanupTimer: WATCH_TIMEOUT_MS elapsed, stop watching menu');

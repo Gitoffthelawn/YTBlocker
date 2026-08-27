@@ -2,7 +2,6 @@ const esbuild = require('esbuild');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const testFiles = [
@@ -33,13 +32,7 @@ try {
       continue;
     }
 
-    const result = spawnSync(process.execPath, ['--test', outfile], {
-      cwd: root,
-      encoding: 'utf8',
-    });
-    process.stdout.write(result.stdout);
-    process.stderr.write(result.stderr);
-    if (result.status !== 0) failed = true;
+    require(outfile);
   }
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
