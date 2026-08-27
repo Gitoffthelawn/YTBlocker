@@ -2,6 +2,7 @@ export type PlayingVideoMenuClickFacts = {
   pathname: string;
   insideWatchMenu: boolean;
   dropdownTrigger: boolean;
+  directMenuButton: boolean;
 };
 
 export type PlayingVideoMetadataInput = {
@@ -17,7 +18,9 @@ export type PlayingVideoMetadata = {
 
 /** 再生ページの操作メニューを開くクリックだけを対象にする。 */
 export function isPlayingVideoMenuClick(facts: PlayingVideoMenuClickFacts): boolean {
-  return facts.pathname === '/watch' && facts.insideWatchMenu && facts.dropdownTrigger;
+  return facts.pathname === '/watch'
+    && facts.insideWatchMenu
+    && (facts.dropdownTrigger || facts.directMenuButton);
 }
 
 function firstNonEmpty(values: string[]): string {

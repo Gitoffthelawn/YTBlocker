@@ -5,38 +5,53 @@ import {
   resolvePlayingVideoMetadata,
 } from '../src/content/watch-menu-context';
 
-test('watch URL and the playback action dropdown are both required', () => {
+test('watch URL and a legacy playback action dropdown are both required', () => {
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/watch',
     insideWatchMenu: true,
     dropdownTrigger: true,
+    directMenuButton: false,
   }), true);
 
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/',
     insideWatchMenu: true,
     dropdownTrigger: true,
+    directMenuButton: false,
   }), false);
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/results',
     insideWatchMenu: true,
     dropdownTrigger: true,
+    directMenuButton: false,
   }), false);
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/shorts/example',
     insideWatchMenu: true,
     dropdownTrigger: true,
+    directMenuButton: false,
   }), false);
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/watch',
     insideWatchMenu: false,
     dropdownTrigger: true,
+    directMenuButton: false,
   }), false);
   assert.equal(isPlayingVideoMenuClick({
     pathname: '/watch',
     insideWatchMenu: true,
     dropdownTrigger: false,
+    directMenuButton: false,
   }), false);
+});
+
+test('watch page accepts the new direct yt-button-shape menu button without legacy markers', () => {
+  assert.equal(isPlayingVideoMenuClick({
+    pathname: '/watch',
+    insideWatchMenu: true,
+    dropdownTrigger: false,
+    directMenuButton: true,
+  }), true);
 });
 
 test('playing-video metadata uses the first non-empty DOM candidates', () => {

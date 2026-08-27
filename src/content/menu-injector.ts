@@ -328,10 +328,17 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
           || path.some((el) =>
             el instanceof Element && typeof el.matches === 'function' && el.matches('.dropdown-trigger')
           );
+        const directMenuButton = path.some((el) =>
+          el instanceof Element
+            && typeof el.matches === 'function'
+            && el.matches('yt-button-shape#button-shape')
+            && el.parentElement?.matches('ytd-menu-renderer')
+        );
         if (!isPlayingVideoMenuClick({
           pathname: location.pathname,
           insideWatchMenu,
           dropdownTrigger,
+          directMenuButton,
         })) {
           reset();
           return;

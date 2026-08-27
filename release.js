@@ -13,6 +13,7 @@ const ARTIFACTS_DIR = path.join(ROOT, 'web-ext-artifacts');
 
 const SRC_ZIP_INCLUDES = [
   'src',
+  'tests',
   'manifest.json',
   'YTBicon.png',
   'package.json',
